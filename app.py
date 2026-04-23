@@ -222,15 +222,20 @@ class MainWindow(QMainWindow):
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
-        return
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if not getattr(self, "_initial_sized", False):
+            self.resize(1100, 900)
+            self._initial_sized = True
         if getattr(self, "banner", None) and getattr(self, "banner_source", None):
             self.banner.setPixmap(self.banner_source.scaledToHeight(90, Qt.SmoothTransformation))
 
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle(APP_NAME)
-        self.resize(980, 760)
-        self.setMinimumSize(900, 680)
+        self.resize(1100, 900)
+        self.setMinimumSize(1024, 820)
 
         self.config = load_config()
 
@@ -252,6 +257,7 @@ class MainWindow(QMainWindow):
         self.github_button.clicked.connect(self.check_github_version)
 
         self.install_button = QPushButton("Instalovat / aktualizovat")
+        self.install_button.setObjectName("primaryButton")
         self.install_button.clicked.connect(self.install_or_update)
 
         self.open_live_button = QPushButton("Otevřít složku LIVE")
@@ -450,6 +456,19 @@ class MainWindow(QMainWindow):
             }
             QPushButton:pressed {
                 background-color: #25303a;
+            }
+            QPushButton#primaryButton {
+                background-color: #0d5cab;
+                border: 1px solid #5ca9ff;
+                color: #ffffff;
+                font-weight: 700;
+            }
+            QPushButton#primaryButton:hover {
+                background-color: #136dca;
+                border-color: #8bc1ff;
+            }
+            QPushButton#primaryButton:pressed {
+                background-color: #0a4e92;
             }
             QLabel {
                 font-size: 13px;
