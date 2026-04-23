@@ -282,7 +282,6 @@ class MainWindow(QMainWindow):
         self.data_status_value = QLabel("-")
         self.global_ini_status_value = QLabel("-")
         self.local_version_value = QLabel("-")
-        self.release_value = QLabel("-")
         self.remote_version_value = QLabel("-")
         self.compare_value = QLabel("-")
 
@@ -317,18 +316,13 @@ class MainWindow(QMainWindow):
         row += 1
         status_layout.addWidget(QLabel("Adresář data:"), row, 0)
         status_layout.addWidget(self.data_status_value, row, 1)
-        row += 1
-        status_layout.addWidget(QLabel("Soubor global.ini:"), row, 0)
-        status_layout.addWidget(self.global_ini_status_value, row, 1)
+        status_layout.addWidget(QLabel("Soubor global.ini:"), row, 2)
+        status_layout.addWidget(self.global_ini_status_value, row, 3)
         row += 1
         status_layout.addWidget(QLabel("Lokální verze češtiny:"), row, 0)
         status_layout.addWidget(self.local_version_value, row, 1)
-        row += 1
-        status_layout.addWidget(QLabel("GitHub release:"), row, 0)
-        status_layout.addWidget(self.release_value, row, 1)
-        row += 1
-        status_layout.addWidget(QLabel("Verze na GitHubu:"), row, 0)
-        status_layout.addWidget(self.remote_version_value, row, 1)
+        status_layout.addWidget(QLabel("Verze na GitHubu:"), row, 2)
+        status_layout.addWidget(self.remote_version_value, row, 3)
         row += 1
         status_layout.addWidget(QLabel("Porovnání:"), row, 0)
         status_layout.addWidget(self.compare_value, row, 1)
@@ -351,9 +345,13 @@ class MainWindow(QMainWindow):
 
         action_layout.addWidget(control_label)
         action_layout.addLayout(control_row)
+        backup_row = QHBoxLayout()
+        backup_row.addWidget(self.backup_checkbox)
+        backup_row.addStretch()
+
         action_layout.addWidget(localization_label)
         action_layout.addLayout(localization_row)
-        action_layout.addWidget(self.backup_checkbox)
+        action_layout.addLayout(backup_row)
 
         links_group = QGroupBox("Užitečné odkazy")
         links_layout = QVBoxLayout(links_group)
@@ -460,6 +458,13 @@ class MainWindow(QMainWindow):
             QCheckBox {
                 spacing: 8px;
                 background: transparent;
+                color: #e8edf2;
+                font-size: 14px;
+                padding: 4px 2px;
+            }
+            QCheckBox::indicator {
+                width: 18px;
+                height: 18px;
             }
             QLabel#sectionLabel {
                 color: #8ecbff;
@@ -564,11 +569,6 @@ class MainWindow(QMainWindow):
             self.last_release_label = release_label
             self.last_remote_version = zip_version
 
-            self.set_status_label(
-                self.release_value,
-                release_label or "-",
-                "ok" if release_label else "warn",
-            )
             self.set_status_label(
                 self.remote_version_value,
                 zip_version or "-",
