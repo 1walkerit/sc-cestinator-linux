@@ -10,8 +10,9 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSettings
 from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QSizePolicy,
     QScrollArea,
@@ -32,6 +33,8 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "SC Češtinátor Linux"
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+ICON_PATH = ASSETS_DIR / "icon.png"
 CONFIG_DIR = Path.home() / ".config" / "sc-cestinator"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
@@ -70,6 +73,15 @@ def load_config() -> dict:
 def save_config(data: dict) -> None:
     ensure_config_dir()
     CONFIG_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def path_looks_valid(user_path: str) -> bool:
+    if not user_path.strip():
+        return False
+    try:
+        return build_paths(user_path)["live"].exists()
+    except Exception:
+        return False
 
 
 def read_text_from_url(url: str, timeout: int = 20) -> str:
@@ -226,15 +238,28 @@ class MainWindow(QMainWindow):
     def showEvent(self, event) -> None:
         super().showEvent(event)
         if not getattr(self, "_initial_sized", False):
-            self.resize(1100, 900)
+            if self.settings.value("window_size") is None:
+                self.resize(1100, 900)
             self._initial_sized = True
+
+    def closeEvent(self, event) -> None:
+        self.settings.setValue("window_size", self.size())
+        super().closeEvent(event)
         if getattr(self, "banner", None) and getattr(self, "banner_source", None):
             self.banner.setPixmap(self.banner_source.scaledToHeight(90, Qt.SmoothTransformation))
 
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle(APP_NAME)
-        self.resize(1100, 900)
+        if ICON_PATH.exists():
+            self.setWindowIcon(QIcon(str(ICON_PATH)))
+
+        self.settings = QSettings("sc-cestinator", "app")
+        saved_size = self.settings.value("window_size")
+        if saved_size is not None:
+            self.resize(saved_size)
+        else:
+            self.resize(1100, 900)
         self.setMinimumSize(1024, 820)
 
         self.config = load_config()
@@ -246,28 +271,37 @@ class MainWindow(QMainWindow):
         self.path_input.setPlaceholderText("Např. /mnt/games/StarCitizen nebo přímo /mnt/games/StarCitizen/LIVE")
         self.path_input.setText(self.config.get("game_path", ""))
         self.path_input.editingFinished.connect(self.auto_refresh_from_path)
+        self.path_input.textChanged.connect(self.update_action_states)
+        self.path_input.setToolTip("Zadej kořen Star Citizenu nebo přímo cestu ke složce LIVE.")
 
         self.browse_button = QPushButton("Procházet…")
         self.browse_button.clicked.connect(self.choose_folder)
+        self.browse_button.setToolTip("Vyber složku s instalací Star Citizen.")
 
         self.check_button = QPushButton("Zkontrolovat")
         self.check_button.clicked.connect(self.check_installation)
+        self.check_button.setToolTip("Zkontroluje lokální instalaci a přítomnost souborů češtiny.")
 
         self.github_button = QPushButton("Zkontrolovat online")
         self.github_button.clicked.connect(self.check_github_version)
+        self.github_button.setToolTip("Zjistí aktuální verzi češtiny v online repozitáři.")
 
         self.install_button = QPushButton("Instalovat / aktualizovat")
         self.install_button.setObjectName("primaryButton")
         self.install_button.clicked.connect(self.install_or_update)
+        self.install_button.setToolTip("Stáhne a nainstaluje aktuální českou lokalizaci do hry.")
 
         self.open_live_button = QPushButton("Otevřít složku LIVE")
         self.open_live_button.clicked.connect(self.open_live_folder)
+        self.open_live_button.setToolTip("Otevře cílovou složku LIVE ve správci souborů.")
 
         self.open_loc_button = QPushButton("Otevřít Localization")
         self.open_loc_button.clicked.connect(self.open_localization_folder)
+        self.open_loc_button.setToolTip("Otevře složku Localization ve správci souborů.")
 
         self.backup_checkbox = QCheckBox("Před aktualizací vytvořit zálohu stávající Localization")
         self.backup_checkbox.setChecked(self.config.get("create_backup", True))
+        self.backup_checkbox.setToolTip("Před přepsáním vytvoří kopii stávající složky Localization.")
 
         self.live_path_value = QLabel("-")
         self.data_status_value = QLabel("-")
@@ -281,6 +315,7 @@ class MainWindow(QMainWindow):
         self.log_output.setMaximumHeight(80)
 
         self._build_ui()
+        self.update_action_states()
         self.log("Aplikace spuštěna.")
         self.auto_initial_check()
 
@@ -525,6 +560,7 @@ class MainWindow(QMainWindow):
         if folder:
             self.path_input.setText(folder)
             self.log(f"Vybraná cesta: {folder}")
+            self.update_action_states()
             self.auto_refresh_from_path()
 
     def get_paths(self) -> dict[str, Path] | None:
@@ -539,6 +575,12 @@ class MainWindow(QMainWindow):
         except Exception as exc:
             QMessageBox.critical(self, "Chyba cesty", f"Neplatná cesta: {exc}")
             return None
+
+    def update_action_states(self) -> None:
+        valid = path_looks_valid(self.path_input.text())
+        self.install_button.setEnabled(valid)
+        self.open_live_button.setEnabled(valid)
+        self.open_loc_button.setEnabled(valid)
 
     def update_compare_label(self) -> None:
         local_text = self.local_version_value.text() if self.local_version_value.text() != "-" else None
@@ -561,7 +603,9 @@ class MainWindow(QMainWindow):
 
     def auto_refresh_from_path(self) -> None:
         if not self.path_input.text().strip():
+            self.update_action_states()
             return
+        self.update_action_states()
         self.log("Cesta změněna, provádím automatickou kontrolu…")
         self.check_installation()
         self.check_github_version()
