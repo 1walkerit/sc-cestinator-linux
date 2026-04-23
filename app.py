@@ -228,7 +228,7 @@ class MainWindow(QMainWindow):
             return None
         label = QLabel()
         label.setAlignment(Qt.AlignCenter)
-        label.setPixmap(pixmap.scaledToWidth(820, Qt.SmoothTransformation))
+        label.setPixmap(pixmap.scaledToHeight(220, Qt.SmoothTransformation))
         label.setStyleSheet("padding: 4px;")
         self.banner_source = pixmap
         return label
@@ -236,8 +236,7 @@ class MainWindow(QMainWindow):
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         if getattr(self, "banner", None) and getattr(self, "banner_source", None):
-            available_width = max(420, self.centralWidget().width() - 32)
-            self.banner.setPixmap(self.banner_source.scaledToWidth(available_width, Qt.SmoothTransformation))
+            self.banner.setPixmap(self.banner_source.scaledToHeight(220, Qt.SmoothTransformation))
 
     def __init__(self) -> None:
         super().__init__()
