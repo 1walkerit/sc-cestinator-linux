@@ -32,8 +32,6 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "SC Češtinátor Linux"
-ASSETS_DIR = Path(__file__).resolve().parent / "assets"
-BANNER_PATH = ASSETS_DIR / "SplashScreen.png"
 CONFIG_DIR = Path.home() / ".config" / "sc-cestinator"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
@@ -222,28 +220,17 @@ class MainWindow(QMainWindow):
         button.clicked.connect(lambda: webbrowser.open(url))
         return button
 
-    def _create_banner(self) -> QLabel | None:
-        if not BANNER_PATH.exists():
-            return None
-        pixmap = QPixmap(str(BANNER_PATH))
-        if pixmap.isNull():
-            return None
-        label = QLabel()
-        label.setAlignment(Qt.AlignCenter)
-        label.setPixmap(pixmap.scaledToHeight(90, Qt.SmoothTransformation))
-        label.setStyleSheet("padding: 4px;")
-        self.banner_source = pixmap
-        return label
-
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
+        return
         if getattr(self, "banner", None) and getattr(self, "banner_source", None):
             self.banner.setPixmap(self.banner_source.scaledToHeight(90, Qt.SmoothTransformation))
 
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle(APP_NAME)
-        self.resize(860, 620)
+        self.resize(980, 760)
+        self.setMinimumSize(900, 680)
 
         self.config = load_config()
 
@@ -276,9 +263,6 @@ class MainWindow(QMainWindow):
         self.backup_checkbox = QCheckBox("Před aktualizací vytvořit zálohu stávající Localization")
         self.backup_checkbox.setChecked(self.config.get("create_backup", True))
 
-        self.banner = None
-        self.banner_source = None
-
         self.live_path_value = QLabel("-")
         self.data_status_value = QLabel("-")
         self.global_ini_status_value = QLabel("-")
@@ -300,9 +284,6 @@ class MainWindow(QMainWindow):
         layout.setSpacing(6)
         layout.setContentsMargins(8, 8, 8, 8)
 
-        self.banner = self._create_banner()
-        if self.banner:
-            layout.addWidget(self.banner)
 
         path_group = QGroupBox("Umístění hry")
         path_layout = QHBoxLayout(path_group)
