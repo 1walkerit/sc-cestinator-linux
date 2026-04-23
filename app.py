@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -29,6 +30,8 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "SC Češtinátor Linux"
+ASSETS_DIR = Path(__file__).resolve().parent / "assets"
+BANNER_PATH = ASSETS_DIR / "SplashScreen.png"
 CONFIG_DIR = Path.home() / ".config" / "sc-cestinator"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
@@ -42,7 +45,12 @@ GITHUB_API_LATEST = (
 )
 
 RSI_URL = "https://robertsspaceindustries.com/"
+RSI_ACCOUNT_URL = "https://robertsspaceindustries.com/account/settings"
+RSI_HANGAR_URL = "https://robertsspaceindustries.com/account/pledges"
+SPECTRUM_URL = "https://robertsspaceindustries.com/spectrum/community/SC"
+ISSUE_COUNCIL_URL = "https://issue-council.robertsspaceindustries.com/"
 SC_WIKI_URL = "https://starcitizen.tools/"
+FINDER_URL = "https://finder.cstone.space/"
 ISSUE_URL = "https://github.com/JarredSC/Star-Citizen-CZ-lokalizace/issues"
 
 
@@ -197,6 +205,40 @@ def compare_versions(local_version: str | None, remote_version: str | None) -> s
 
 
 class MainWindow(QMainWindow):
+    def set_status_label(self, label: QLabel, text: str, state: str = "neutral") -> None:
+        styles = {
+            "ok": "color: #2e7d32; font-weight: 700;",
+            "warn": "color: #e65100; font-weight: 700;",
+            "error": "color: #c62828; font-weight: 700;",
+            "neutral": "font-weight: 600;",
+        }
+        label.setText(text)
+        label.setStyleSheet(styles.get(state, styles["neutral"]))
+
+    def _make_link_button(self, text: str, url: str) -> QPushButton:
+        button = QPushButton(text)
+        button.clicked.connect(lambda: webbrowser.open(url))
+        return button
+
+    def _create_banner(self) -> QLabel | None:
+        if not BANNER_PATH.exists():
+            return None
+        pixmap = QPixmap(str(BANNER_PATH))
+        if pixmap.isNull():
+            return None
+        label = QLabel()
+        label.setAlignment(Qt.AlignCenter)
+        label.setPixmap(pixmap.scaledToWidth(820, Qt.SmoothTransformation))
+        label.setStyleSheet("padding: 4px;")
+        self.banner_source = pixmap
+        return label
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        if getattr(self, "banner", None) and getattr(self, "banner_source", None):
+            available_width = max(420, self.centralWidget().width() - 32)
+            self.banner.setPixmap(self.banner_source.scaledToWidth(available_width, Qt.SmoothTransformation))
+
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle(APP_NAME)
@@ -215,13 +257,13 @@ class MainWindow(QMainWindow):
         self.browse_button = QPushButton("Procházet…")
         self.browse_button.clicked.connect(self.choose_folder)
 
-        self.check_button = QPushButton("Zkontrolovat instalaci")
+        self.check_button = QPushButton("Zkontrolovat")
         self.check_button.clicked.connect(self.check_installation)
 
-        self.github_button = QPushButton("Zjistit verzi na GitHubu")
+        self.github_button = QPushButton("Zkontrolovat online")
         self.github_button.clicked.connect(self.check_github_version)
 
-        self.install_button = QPushButton("Nainstalovat / aktualizovat češtinu")
+        self.install_button = QPushButton("Instalovat / aktualizovat")
         self.install_button.clicked.connect(self.install_or_update)
 
         self.open_live_button = QPushButton("Otevřít složku LIVE")
@@ -232,6 +274,9 @@ class MainWindow(QMainWindow):
 
         self.backup_checkbox = QCheckBox("Před aktualizací vytvořit zálohu stávající Localization")
         self.backup_checkbox.setChecked(self.config.get("create_backup", True))
+
+        self.banner = None
+        self.banner_source = None
 
         self.live_path_value = QLabel("-")
         self.data_status_value = QLabel("-")
@@ -251,6 +296,10 @@ class MainWindow(QMainWindow):
     def _build_ui(self) -> None:
         root = QWidget()
         layout = QVBoxLayout(root)
+
+        self.banner = self._create_banner()
+        if self.banner:
+            layout.addWidget(self.banner)
 
         path_group = QGroupBox("Umístění hry")
         path_layout = QHBoxLayout(path_group)
@@ -298,27 +347,30 @@ class MainWindow(QMainWindow):
         action_layout.addWidget(self.backup_checkbox)
 
         links_group = QGroupBox("Užitečné odkazy")
-        links_layout = QHBoxLayout(links_group)
+        links_layout = QVBoxLayout(links_group)
 
-        repo_btn = QPushButton("GitHub projektu")
-        repo_btn.clicked.connect(lambda: webbrowser.open(GITHUB_REPO))
-        links_layout.addWidget(repo_btn)
+        sc_links_group = QGroupBox("Star Citizen")
+        sc_links_layout = QHBoxLayout(sc_links_group)
+        sc_links_layout.addWidget(self._make_link_button("RSI", RSI_URL))
+        sc_links_layout.addWidget(self._make_link_button("Můj RSI účet", RSI_ACCOUNT_URL))
+        sc_links_layout.addWidget(self._make_link_button("Můj RSI hangár", RSI_HANGAR_URL))
+        sc_links_layout.addWidget(self._make_link_button("Spectrum", SPECTRUM_URL))
+        sc_links_layout.addWidget(self._make_link_button("Issue Council", ISSUE_COUNCIL_URL))
 
-        rel_btn = QPushButton("Poslední release")
-        rel_btn.clicked.connect(lambda: webbrowser.open(LATEST_ZIP_URL))
-        links_layout.addWidget(rel_btn)
+        cz_links_group = QGroupBox("Čeština")
+        cz_links_layout = QHBoxLayout(cz_links_group)
+        cz_links_layout.addWidget(self._make_link_button("GitHub projektu", GITHUB_REPO))
+        cz_links_layout.addWidget(self._make_link_button("Poslední release", LATEST_ZIP_URL))
+        cz_links_layout.addWidget(self._make_link_button("Nahlásit problém", ISSUE_URL))
 
-        rsi_btn = QPushButton("RSI")
-        rsi_btn.clicked.connect(lambda: webbrowser.open(RSI_URL))
-        links_layout.addWidget(rsi_btn)
+        tools_links_group = QGroupBox("Nástroje")
+        tools_links_layout = QHBoxLayout(tools_links_group)
+        tools_links_layout.addWidget(self._make_link_button("SC Wiki", SC_WIKI_URL))
+        tools_links_layout.addWidget(self._make_link_button("Finder", FINDER_URL))
 
-        wiki_btn = QPushButton("SC Wiki")
-        wiki_btn.clicked.connect(lambda: webbrowser.open(SC_WIKI_URL))
-        links_layout.addWidget(wiki_btn)
-
-        issue_btn = QPushButton("Nahlásit problém")
-        issue_btn.clicked.connect(lambda: webbrowser.open(ISSUE_URL))
-        links_layout.addWidget(issue_btn)
+        links_layout.addWidget(sc_links_group)
+        links_layout.addWidget(cz_links_group)
+        links_layout.addWidget(tools_links_group)
 
         log_group = QGroupBox("Log")
         log_layout = QVBoxLayout(log_group)
@@ -330,6 +382,32 @@ class MainWindow(QMainWindow):
         layout.addWidget(links_group)
         layout.addWidget(log_group)
 
+        root.setStyleSheet(
+            """
+            QGroupBox {
+                font-weight: 600;
+                margin-top: 8px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 4px;
+            }
+            QPushButton {
+                min-height: 30px;
+            }
+            QLabel {
+                font-size: 14px;
+            }
+            QLineEdit {
+                min-height: 30px;
+                font-size: 14px;
+            }
+            QPlainTextEdit {
+                font-family: monospace;
+            }
+            """
+        )
         self.setCentralWidget(root)
 
     def log(self, message: str) -> None:
@@ -359,7 +437,14 @@ class MainWindow(QMainWindow):
         local_text = self.local_version_value.text() if self.local_version_value.text() != "-" else None
         remote_text = self.remote_version_value.text() if self.remote_version_value.text() != "-" else None
         result = compare_versions(local_text, remote_text)
-        self.compare_value.setText(result)
+        state = "neutral"
+        if result == "Čeština je aktuální":
+            state = "ok"
+        elif "jiná / novější verze" in result:
+            state = "warn"
+        elif result in ("Čeština není nainstalovaná", "Nelze zjistit vzdálenou verzi", "Verzi se nepodařilo zjistit"):
+            state = "warn"
+        self.set_status_label(self.compare_value, result, state)
 
     def auto_initial_check(self) -> None:
         if self.path_input.text().strip():
@@ -384,9 +469,21 @@ class MainWindow(QMainWindow):
         global_exists = paths["global_ini"].exists()
         local_version = read_local_version(paths["global_ini"])
 
-        self.data_status_value.setText("Existuje" if data_exists else "Neexistuje")
-        self.global_ini_status_value.setText("Existuje" if global_exists else "Neexistuje")
-        self.local_version_value.setText(local_version or "-")
+        self.set_status_label(
+            self.data_status_value,
+            "Existuje" if data_exists else "Neexistuje",
+            "ok" if data_exists else "error",
+        )
+        self.set_status_label(
+            self.global_ini_status_value,
+            "Existuje" if global_exists else "Neexistuje",
+            "ok" if global_exists else "error",
+        )
+        self.set_status_label(
+            self.local_version_value,
+            local_version or "-",
+            "ok" if local_version else "warn",
+        )
         self.update_compare_label()
 
         self.log(f"Kontrola LIVE cesty: {paths['live']}")
@@ -406,8 +503,16 @@ class MainWindow(QMainWindow):
             self.last_release_label = release_label
             self.last_remote_version = zip_version
 
-            self.release_value.setText(release_label or "-")
-            self.remote_version_value.setText(zip_version or "-")
+            self.set_status_label(
+                self.release_value,
+                release_label or "-",
+                "ok" if release_label else "warn",
+            )
+            self.set_status_label(
+                self.remote_version_value,
+                zip_version or "-",
+                "ok" if zip_version else "warn",
+            )
             self.update_compare_label()
 
             self.log(f"GitHub release: {release_label or 'nezjištěn'}")
@@ -484,9 +589,17 @@ class MainWindow(QMainWindow):
                 self.log(f"Nová lokalizace zkopírována do: {target_loc}")
 
             local_version = read_local_version(paths["global_ini"])
-            self.data_status_value.setText("Existuje")
-            self.global_ini_status_value.setText("Existuje" if paths["global_ini"].exists() else "Neexistuje")
-            self.local_version_value.setText(local_version or "-")
+            self.set_status_label(self.data_status_value, "Existuje", "ok")
+            self.set_status_label(
+                self.global_ini_status_value,
+                "Existuje" if paths["global_ini"].exists() else "Neexistuje",
+                "ok" if paths["global_ini"].exists() else "error",
+            )
+            self.set_status_label(
+                self.local_version_value,
+                local_version or "-",
+                "ok" if local_version else "warn",
+            )
             self.update_compare_label()
 
             QMessageBox.information(self, "Hotovo", "Čeština byla nainstalována / aktualizována.")
