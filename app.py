@@ -492,6 +492,11 @@ class MainWindow(QMainWindow):
             QPushButton:pressed {
                 background-color: #25303a;
             }
+            QPushButton:disabled {
+                background-color: #1a2027;
+                color: #6b7785;
+                border: 1px solid #2a333d;
+            }
             QPushButton#primaryButton {
                 background-color: #0d5cab;
                 border: 1px solid #5ca9ff;
@@ -504,6 +509,11 @@ class MainWindow(QMainWindow):
             }
             QPushButton#primaryButton:pressed {
                 background-color: #0a4e92;
+            }
+            QPushButton#primaryButton:disabled {
+                background-color: #24384f;
+                color: #7fa6d1;
+                border: 1px solid #3a5675;
             }
             QLabel {
                 font-size: 13px;
