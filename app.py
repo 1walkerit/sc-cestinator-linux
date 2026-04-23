@@ -13,6 +13,7 @@ from urllib.error import URLError, HTTPError
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
+    QSizePolicy,
     QApplication,
     QFileDialog,
     QGridLayout,
@@ -287,6 +288,7 @@ class MainWindow(QMainWindow):
 
         self.log_output = QPlainTextEdit()
         self.log_output.setReadOnly(True)
+        self.log_output.setMaximumHeight(120)
 
         self._build_ui()
         self.log("Aplikace spuštěna.")
@@ -295,6 +297,8 @@ class MainWindow(QMainWindow):
     def _build_ui(self) -> None:
         root = QWidget()
         layout = QVBoxLayout(root)
+        layout.setSpacing(8)
+        layout.setContentsMargins(10, 10, 10, 10)
 
         self.banner = self._create_banner()
         if self.banner:
@@ -332,17 +336,19 @@ class MainWindow(QMainWindow):
         action_group = QGroupBox("Akce")
         action_layout = QVBoxLayout(action_group)
 
-        action_row_1 = QHBoxLayout()
-        action_row_1.addWidget(self.check_button)
-        action_row_1.addWidget(self.github_button)
-        action_row_1.addWidget(self.install_button)
-        action_layout.addLayout(action_row_1)
+        control_group = QGroupBox("Kontrola")
+        control_layout = QHBoxLayout(control_group)
+        control_layout.addWidget(self.check_button)
+        control_layout.addWidget(self.github_button)
 
-        action_row_2 = QHBoxLayout()
-        action_row_2.addWidget(self.open_live_button)
-        action_row_2.addWidget(self.open_loc_button)
-        action_layout.addLayout(action_row_2)
+        action_buttons_group = QGroupBox("Práce s lokalizací")
+        action_buttons_layout = QHBoxLayout(action_buttons_group)
+        action_buttons_layout.addWidget(self.install_button)
+        action_buttons_layout.addWidget(self.open_live_button)
+        action_buttons_layout.addWidget(self.open_loc_button)
 
+        action_layout.addWidget(control_group)
+        action_layout.addWidget(action_buttons_group)
         action_layout.addWidget(self.backup_checkbox)
 
         links_group = QGroupBox("Užitečné odkazy")
@@ -381,29 +387,69 @@ class MainWindow(QMainWindow):
         layout.addWidget(links_group)
         layout.addWidget(log_group)
 
+        for button in self.findChildren(QPushButton):
+            button.setMinimumWidth(140)
+            button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
         root.setStyleSheet(
             """
+            QWidget {
+                background-color: #1b1f24;
+                color: #e8edf2;
+            }
             QGroupBox {
-                font-weight: 600;
-                margin-top: 8px;
+                font-weight: 700;
+                margin-top: 10px;
+                border: 1px solid #36414f;
+                border-radius: 8px;
+                padding-top: 10px;
+                background-color: #232a33;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
                 left: 10px;
-                padding: 0 4px;
+                padding: 0 6px;
+                color: #8ecbff;
+                background-color: #232a33;
             }
             QPushButton {
-                min-height: 30px;
+                min-height: 34px;
+                border: 1px solid #4b5a6a;
+                border-radius: 6px;
+                background-color: #2d3742;
+                padding: 4px 10px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #394654;
+                border-color: #6ea8d9;
+            }
+            QPushButton:pressed {
+                background-color: #25303a;
             }
             QLabel {
                 font-size: 14px;
+                background: transparent;
             }
             QLineEdit {
-                min-height: 30px;
+                min-height: 32px;
                 font-size: 14px;
+                border: 1px solid #4b5a6a;
+                border-radius: 6px;
+                padding: 4px 8px;
+                background-color: #10151b;
+                color: #f2f6fb;
             }
             QPlainTextEdit {
                 font-family: monospace;
+                border: 1px solid #4b5a6a;
+                border-radius: 6px;
+                background-color: #10151b;
+                color: #d9e2ec;
+            }
+            QCheckBox {
+                spacing: 8px;
+                background: transparent;
             }
             """
         )
@@ -601,6 +647,7 @@ class MainWindow(QMainWindow):
             )
             self.update_compare_label()
 
+            self.check_installation()
             QMessageBox.information(self, "Hotovo", "Čeština byla nainstalována / aktualizována.")
             self.log(f"Hotovo. Lokální verze po instalaci: {local_version or 'nezjištěna'}")
 
