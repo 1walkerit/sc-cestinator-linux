@@ -1,6 +1,20 @@
 # SC Češtinátor Linux
 
+![GitHub release](https://img.shields.io/github/v/release/1walkerit/sc-cestinator-linux?label=verze)
+![Platform](https://img.shields.io/badge/platform-linux-blue)
+![License](https://img.shields.io/badge/license-free-green)
+
 Linux GUI nástroj pro instalaci a aktualizaci české lokalizace pro hru Star Citizen.
+
+## Stažení
+
+👉 **[Stáhnout AppImage](https://github.com/1walkerit/sc-cestinator-linux/releases/latest)**
+
+Stačí stáhnout soubor, nastavit práva a spustit:
+
+```bash
+chmod +x SC-Cestinator-Linux-v0.1.0-x86_64.AppImage
+./SC-Cestinator-Linux-v0.1.0-x86_64.AppImage
 
 ## Co aplikace umí
 
