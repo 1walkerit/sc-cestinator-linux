@@ -229,7 +229,7 @@ class MainWindow(QMainWindow):
             return None
         label = QLabel()
         label.setAlignment(Qt.AlignCenter)
-        label.setPixmap(pixmap.scaledToHeight(160, Qt.SmoothTransformation))
+        label.setPixmap(pixmap.scaledToHeight(120, Qt.SmoothTransformation))
         label.setStyleSheet("padding: 4px;")
         self.banner_source = pixmap
         return label
@@ -237,7 +237,7 @@ class MainWindow(QMainWindow):
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         if getattr(self, "banner", None) and getattr(self, "banner_source", None):
-            self.banner.setPixmap(self.banner_source.scaledToHeight(160, Qt.SmoothTransformation))
+            self.banner.setPixmap(self.banner_source.scaledToHeight(120, Qt.SmoothTransformation))
 
     def __init__(self) -> None:
         super().__init__()
@@ -309,28 +309,42 @@ class MainWindow(QMainWindow):
         path_layout.addWidget(self.browse_button)
 
         status_group = QGroupBox("Stav instalace")
-        status_layout = QGridLayout(status_group)
-        status_layout.setHorizontalSpacing(12)
-        status_layout.setColumnStretch(0, 0)
-        status_layout.setColumnStretch(1, 1)
-        status_layout.setColumnStretch(2, 0)
-        status_layout.setColumnStretch(3, 1)
-        row = 0
-        status_layout.addWidget(QLabel("Cílová LIVE cesta:"), row, 0)
-        status_layout.addWidget(self.live_path_value, row, 1)
-        row += 1
-        status_layout.addWidget(QLabel("Adresář data:"), row, 0)
-        status_layout.addWidget(self.data_status_value, row, 1)
-        status_layout.addWidget(QLabel("Soubor global.ini:"), row, 2)
-        status_layout.addWidget(self.global_ini_status_value, row, 3)
-        row += 1
-        status_layout.addWidget(QLabel("Lokální verze češtiny:"), row, 0)
-        status_layout.addWidget(self.local_version_value, row, 1)
-        status_layout.addWidget(QLabel("Verze na GitHubu:"), row, 2)
-        status_layout.addWidget(self.remote_version_value, row, 3)
-        row += 1
-        status_layout.addWidget(QLabel("Porovnání:"), row, 0)
-        status_layout.addWidget(self.compare_value, row, 1)
+        status_layout = QVBoxLayout(status_group)
+
+        live_row = QHBoxLayout()
+        live_row.addWidget(QLabel("Cílová LIVE cesta:"))
+        live_row.addWidget(self.live_path_value, 1)
+
+        pairs_row = QHBoxLayout()
+
+        left_status = QGridLayout()
+        left_status.setHorizontalSpacing(10)
+        left_status.addWidget(QLabel("Adresář data:"), 0, 0)
+        left_status.addWidget(self.data_status_value, 0, 1)
+        left_status.addWidget(QLabel("Lokální verze češtiny:"), 1, 0)
+        left_status.addWidget(self.local_version_value, 1, 1)
+
+        right_status = QGridLayout()
+        right_status.setHorizontalSpacing(10)
+        right_status.addWidget(QLabel("Soubor global.ini:"), 0, 0)
+        right_status.addWidget(self.global_ini_status_value, 0, 1)
+        right_status.addWidget(QLabel("Verze na GitHubu:"), 1, 0)
+        right_status.addWidget(self.remote_version_value, 1, 1)
+
+        pairs_row.addStretch()
+        pairs_row.addLayout(left_status)
+        pairs_row.addSpacing(40)
+        pairs_row.addLayout(right_status)
+        pairs_row.addStretch()
+
+        compare_row = QHBoxLayout()
+        compare_row.addWidget(QLabel("Porovnání:"))
+        compare_row.addWidget(self.compare_value)
+        compare_row.addStretch()
+
+        status_layout.addLayout(live_row)
+        status_layout.addLayout(pairs_row)
+        status_layout.addLayout(compare_row)
 
         action_group = QGroupBox("Akce")
         action_layout = QVBoxLayout(action_group)
@@ -363,7 +377,9 @@ class MainWindow(QMainWindow):
 
         sc_links_label = QLabel("Star Citizen")
         sc_links_label.setObjectName("sectionLabel")
+        sc_links_label.setMinimumHeight(24)
         sc_links_layout = QGridLayout()
+        sc_links_layout.setContentsMargins(0, 0, 0, 0)
         sc_links_layout.setHorizontalSpacing(8)
         sc_links_layout.setVerticalSpacing(8)
         sc_links_layout.addWidget(self._make_link_button("RSI", RSI_URL), 0, 0)
@@ -374,21 +390,31 @@ class MainWindow(QMainWindow):
 
         cz_links_label = QLabel("Čeština")
         cz_links_label.setObjectName("sectionLabel")
-        cz_links_layout = QHBoxLayout()
-        cz_links_layout.addWidget(self._make_link_button("GitHub projektu", GITHUB_REPO))
-        cz_links_layout.addWidget(self._make_link_button("Poslední release", LATEST_ZIP_URL))
-        cz_links_layout.addWidget(self._make_link_button("Nahlásit problém", ISSUE_URL))
+        cz_links_label.setMinimumHeight(24)
+        cz_links_layout = QGridLayout()
+        cz_links_layout.setContentsMargins(0, 0, 0, 0)
+        cz_links_layout.setHorizontalSpacing(8)
+        cz_links_layout.setVerticalSpacing(8)
+        cz_links_layout.addWidget(self._make_link_button("GitHub projektu", GITHUB_REPO), 0, 0)
+        cz_links_layout.addWidget(self._make_link_button("Poslední release", LATEST_ZIP_URL), 0, 1)
+        cz_links_layout.addWidget(self._make_link_button("Nahlásit problém", ISSUE_URL), 0, 2)
 
         tools_links_label = QLabel("Nástroje")
         tools_links_label.setObjectName("sectionLabel")
-        tools_links_layout = QHBoxLayout()
-        tools_links_layout.addWidget(self._make_link_button("SC Wiki", SC_WIKI_URL))
-        tools_links_layout.addWidget(self._make_link_button("Finder", FINDER_URL))
+        tools_links_label.setMinimumHeight(24)
+        tools_links_layout = QGridLayout()
+        tools_links_layout.setContentsMargins(0, 0, 0, 0)
+        tools_links_layout.setHorizontalSpacing(8)
+        tools_links_layout.setVerticalSpacing(8)
+        tools_links_layout.addWidget(self._make_link_button("SC Wiki", SC_WIKI_URL), 0, 0)
+        tools_links_layout.addWidget(self._make_link_button("Finder", FINDER_URL), 0, 1)
 
         links_layout.addWidget(sc_links_label)
         links_layout.addLayout(sc_links_layout)
+        links_layout.addSpacing(6)
         links_layout.addWidget(cz_links_label)
         links_layout.addLayout(cz_links_layout)
+        links_layout.addSpacing(6)
         links_layout.addWidget(tools_links_label)
         links_layout.addLayout(tools_links_layout)
 
@@ -478,7 +504,9 @@ class MainWindow(QMainWindow):
                 color: #8ecbff;
                 font-size: 14px;
                 font-weight: 700;
-                padding: 4px 2px 0 2px;
+                padding: 4px 2px 4px 2px;
+                margin-top: 4px;
+                background: transparent;
             }
             """
         )
