@@ -86,15 +86,35 @@ def parse_version_line(text: str) -> str | None:
     if not text:
         return None
 
-    first_line = text.splitlines()[0].strip() if text.splitlines() else ""
+    lines = text.splitlines()
+    if not lines:
+        return None
+
+    first_line = lines[0].strip().lstrip("﻿")
     if not first_line:
         return None
 
-    # Očekávaný formát např. ;0.9v
-    match = re.match(r"^[;#\s]*([^\s]+)", first_line)
-    if match:
-        return match.group(1).strip()
-    return None
+    # Očekávaný formát např. ;0.9v nebo #0.9v
+    if first_line.startswith((";", "#")):
+        first_line = first_line[1:].strip()
+
+    if not first_line:
+        return None
+
+    token = first_line.split()[0].strip()
+    return token or None
+
+
+def fetch_remote_global_ini_version() -> str | None:
+    raw_url = (
+        "https://raw.githubusercontent.com/"
+        "JarredSC/Star-Citizen-CZ-lokalizace/main/Localization/english/global.ini"
+    )
+    try:
+        content = read_text_from_url(raw_url)
+        return parse_version_line(content)
+    except Exception:
+        return None
 
 
 def read_local_version(global_ini_path: Path) -> str | None:
@@ -125,10 +145,10 @@ def fetch_latest_release_info() -> tuple[str | None, str | None]:
     """
     Vrací dvojici:
     - release label (tag_name nebo name)
-    - verze češtiny z global.ini v ZIPu, pokud se podaří zjistit
+    - verze češtiny z raw global.ini v repozitáři
     """
     release_label = None
-    zip_version = None
+    remote_version = None
 
     try:
         raw = read_text_from_url(GITHUB_API_LATEST)
@@ -137,15 +157,9 @@ def fetch_latest_release_info() -> tuple[str | None, str | None]:
     except Exception:
         release_label = None
 
-    try:
-        with tempfile.TemporaryDirectory(prefix="sc-cestinator-check-") as tmp:
-            zip_path = Path(tmp) / "Localization.zip"
-            download_file(LATEST_ZIP_URL, zip_path, timeout=60)
-            zip_version = read_version_from_zip(zip_path)
-    except Exception:
-        zip_version = None
+    remote_version = fetch_remote_global_ini_version()
 
-    return release_label, zip_version
+    return release_label, remote_version
 
 
 def normalize_live_path(user_path: str) -> Path:
@@ -196,6 +210,7 @@ class MainWindow(QMainWindow):
         self.path_input = QLineEdit()
         self.path_input.setPlaceholderText("Např. /mnt/games/StarCitizen nebo přímo /mnt/games/StarCitizen/LIVE")
         self.path_input.setText(self.config.get("game_path", ""))
+        self.path_input.editingFinished.connect(self.auto_refresh_from_path)
 
         self.browse_button = QPushButton("Procházet…")
         self.browse_button.clicked.connect(self.choose_folder)
@@ -231,6 +246,7 @@ class MainWindow(QMainWindow):
 
         self._build_ui()
         self.log("Aplikace spuštěna.")
+        self.auto_initial_check()
 
     def _build_ui(self) -> None:
         root = QWidget()
@@ -324,6 +340,7 @@ class MainWindow(QMainWindow):
         if folder:
             self.path_input.setText(folder)
             self.log(f"Vybraná cesta: {folder}")
+            self.auto_refresh_from_path()
 
     def get_paths(self) -> dict[str, Path] | None:
         raw_path = self.path_input.text().strip()
@@ -343,6 +360,19 @@ class MainWindow(QMainWindow):
         remote_text = self.remote_version_value.text() if self.remote_version_value.text() != "-" else None
         result = compare_versions(local_text, remote_text)
         self.compare_value.setText(result)
+
+    def auto_initial_check(self) -> None:
+        if self.path_input.text().strip():
+            self.log("Provádím automatickou kontrolu po spuštění…")
+            self.check_installation()
+            self.check_github_version()
+
+    def auto_refresh_from_path(self) -> None:
+        if not self.path_input.text().strip():
+            return
+        self.log("Cesta změněna, provádím automatickou kontrolu…")
+        self.check_installation()
+        self.check_github_version()
 
     def check_installation(self) -> None:
         paths = self.get_paths()
@@ -381,7 +411,7 @@ class MainWindow(QMainWindow):
             self.update_compare_label()
 
             self.log(f"GitHub release: {release_label or 'nezjištěn'}")
-            self.log(f"Verze v ZIPu: {zip_version or 'nezjištěna'}")
+            self.log(f"Verze v repozitáři: {zip_version or 'nezjištěna'}")
         except (HTTPError, URLError) as exc:
             QMessageBox.critical(self, "Chyba sítě", f"Nepodařilo se kontaktovat GitHub:\n{exc}")
             self.log(f"Chyba sítě: {exc}")
