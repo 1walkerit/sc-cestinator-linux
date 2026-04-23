@@ -336,46 +336,56 @@ class MainWindow(QMainWindow):
         action_group = QGroupBox("Akce")
         action_layout = QVBoxLayout(action_group)
 
-        control_group = QGroupBox("Kontrola")
-        control_layout = QHBoxLayout(control_group)
-        control_layout.addWidget(self.check_button)
-        control_layout.addWidget(self.github_button)
+        control_label = QLabel("Kontrola")
+        control_label.setObjectName("sectionLabel")
+        control_row = QHBoxLayout()
+        control_row.addWidget(self.check_button)
+        control_row.addWidget(self.github_button)
 
-        action_buttons_group = QGroupBox("Práce s lokalizací")
-        action_buttons_layout = QHBoxLayout(action_buttons_group)
-        action_buttons_layout.addWidget(self.install_button)
-        action_buttons_layout.addWidget(self.open_live_button)
-        action_buttons_layout.addWidget(self.open_loc_button)
+        localization_label = QLabel("Práce s lokalizací")
+        localization_label.setObjectName("sectionLabel")
+        localization_row = QHBoxLayout()
+        localization_row.addWidget(self.install_button)
+        localization_row.addWidget(self.open_live_button)
+        localization_row.addWidget(self.open_loc_button)
 
-        action_layout.addWidget(control_group)
-        action_layout.addWidget(action_buttons_group)
+        action_layout.addWidget(control_label)
+        action_layout.addLayout(control_row)
+        action_layout.addWidget(localization_label)
+        action_layout.addLayout(localization_row)
         action_layout.addWidget(self.backup_checkbox)
 
         links_group = QGroupBox("Užitečné odkazy")
         links_layout = QVBoxLayout(links_group)
 
-        sc_links_group = QGroupBox("Star Citizen")
-        sc_links_layout = QHBoxLayout(sc_links_group)
-        sc_links_layout.addWidget(self._make_link_button("RSI", RSI_URL))
-        sc_links_layout.addWidget(self._make_link_button("Můj RSI účet", RSI_ACCOUNT_URL))
-        sc_links_layout.addWidget(self._make_link_button("Můj RSI hangár", RSI_HANGAR_URL))
-        sc_links_layout.addWidget(self._make_link_button("Spectrum", SPECTRUM_URL))
-        sc_links_layout.addWidget(self._make_link_button("Issue Council", ISSUE_COUNCIL_URL))
+        sc_links_label = QLabel("Star Citizen")
+        sc_links_label.setObjectName("sectionLabel")
+        sc_links_layout = QGridLayout()
+        sc_links_layout.addWidget(self._make_link_button("RSI", RSI_URL), 0, 0)
+        sc_links_layout.addWidget(self._make_link_button("Můj RSI účet", RSI_ACCOUNT_URL), 0, 1)
+        sc_links_layout.addWidget(self._make_link_button("Můj RSI hangár", RSI_HANGAR_URL), 0, 2)
+        sc_links_layout.addWidget(self._make_link_button("Spectrum", SPECTRUM_URL), 1, 0)
+        sc_links_layout.addWidget(self._make_link_button("Issue Council", ISSUE_COUNCIL_URL), 1, 1)
 
-        cz_links_group = QGroupBox("Čeština")
-        cz_links_layout = QHBoxLayout(cz_links_group)
+        cz_links_label = QLabel("Čeština")
+        cz_links_label.setObjectName("sectionLabel")
+        cz_links_layout = QHBoxLayout()
         cz_links_layout.addWidget(self._make_link_button("GitHub projektu", GITHUB_REPO))
         cz_links_layout.addWidget(self._make_link_button("Poslední release", LATEST_ZIP_URL))
         cz_links_layout.addWidget(self._make_link_button("Nahlásit problém", ISSUE_URL))
 
-        tools_links_group = QGroupBox("Nástroje")
-        tools_links_layout = QHBoxLayout(tools_links_group)
+        tools_links_label = QLabel("Nástroje")
+        tools_links_label.setObjectName("sectionLabel")
+        tools_links_layout = QHBoxLayout()
         tools_links_layout.addWidget(self._make_link_button("SC Wiki", SC_WIKI_URL))
         tools_links_layout.addWidget(self._make_link_button("Finder", FINDER_URL))
 
-        links_layout.addWidget(sc_links_group)
-        links_layout.addWidget(cz_links_group)
-        links_layout.addWidget(tools_links_group)
+        links_layout.addWidget(sc_links_label)
+        links_layout.addLayout(sc_links_layout)
+        links_layout.addWidget(cz_links_label)
+        links_layout.addLayout(cz_links_layout)
+        links_layout.addWidget(tools_links_label)
+        links_layout.addLayout(tools_links_layout)
 
         log_group = QGroupBox("Log")
         log_layout = QVBoxLayout(log_group)
@@ -402,7 +412,7 @@ class MainWindow(QMainWindow):
                 margin-top: 10px;
                 border: 1px solid #36414f;
                 border-radius: 8px;
-                padding-top: 10px;
+                padding-top: 12px;
                 background-color: #232a33;
             }
             QGroupBox::title {
@@ -413,7 +423,7 @@ class MainWindow(QMainWindow):
                 background-color: #232a33;
             }
             QPushButton {
-                min-height: 34px;
+                min-height: 38px;
                 border: 1px solid #4b5a6a;
                 border-radius: 6px;
                 background-color: #2d3742;
@@ -450,6 +460,12 @@ class MainWindow(QMainWindow):
             QCheckBox {
                 spacing: 8px;
                 background: transparent;
+            }
+            QLabel#sectionLabel {
+                color: #8ecbff;
+                font-size: 14px;
+                font-weight: 700;
+                padding: 4px 2px 0 2px;
             }
             """
         )
