@@ -229,7 +229,7 @@ class MainWindow(QMainWindow):
             return None
         label = QLabel()
         label.setAlignment(Qt.AlignCenter)
-        label.setPixmap(pixmap.scaledToHeight(220, Qt.SmoothTransformation))
+        label.setPixmap(pixmap.scaledToHeight(160, Qt.SmoothTransformation))
         label.setStyleSheet("padding: 4px;")
         self.banner_source = pixmap
         return label
@@ -237,7 +237,7 @@ class MainWindow(QMainWindow):
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         if getattr(self, "banner", None) and getattr(self, "banner_source", None):
-            self.banner.setPixmap(self.banner_source.scaledToHeight(220, Qt.SmoothTransformation))
+            self.banner.setPixmap(self.banner_source.scaledToHeight(160, Qt.SmoothTransformation))
 
     def __init__(self) -> None:
         super().__init__()
@@ -310,6 +310,11 @@ class MainWindow(QMainWindow):
 
         status_group = QGroupBox("Stav instalace")
         status_layout = QGridLayout(status_group)
+        status_layout.setHorizontalSpacing(12)
+        status_layout.setColumnStretch(0, 0)
+        status_layout.setColumnStretch(1, 1)
+        status_layout.setColumnStretch(2, 0)
+        status_layout.setColumnStretch(3, 1)
         row = 0
         status_layout.addWidget(QLabel("Cílová LIVE cesta:"), row, 0)
         status_layout.addWidget(self.live_path_value, row, 1)
@@ -359,6 +364,8 @@ class MainWindow(QMainWindow):
         sc_links_label = QLabel("Star Citizen")
         sc_links_label.setObjectName("sectionLabel")
         sc_links_layout = QGridLayout()
+        sc_links_layout.setHorizontalSpacing(8)
+        sc_links_layout.setVerticalSpacing(8)
         sc_links_layout.addWidget(self._make_link_button("RSI", RSI_URL), 0, 0)
         sc_links_layout.addWidget(self._make_link_button("Můj RSI účet", RSI_ACCOUNT_URL), 0, 1)
         sc_links_layout.addWidget(self._make_link_button("Můj RSI hangár", RSI_HANGAR_URL), 0, 2)
@@ -396,8 +403,9 @@ class MainWindow(QMainWindow):
         layout.addWidget(log_group)
 
         for button in self.findChildren(QPushButton):
-            button.setMinimumWidth(140)
-            button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            button.setMinimumWidth(120)
+            button.setMaximumWidth(260)
+            button.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         root.setStyleSheet(
             """
