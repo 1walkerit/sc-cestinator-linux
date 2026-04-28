@@ -40,9 +40,11 @@ CONFIG_DIR = Path.home() / ".config" / "sc-cestinator"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
 GITHUB_REPO = "https://github.com/JarredSC/Star-Citizen-CZ-lokalizace"
-RAW_GLOBAL_INI_URL = base64.b64decode(
-    "aHR0cHM6Ly9yYXcuZ2l0aHVidXNl([github.com](https://github.com/JarredSC/Star-Citizen-CZ-lokalizace/tree/main/Localization/english))0phcnJlZFNDL1N0YXItQ2l0aXplbi1DWi1sb2thbGl6YWNlL21haW4vTG9jYWxpemF0aW9uL2VuZ2xpc2gvZ2xvYmFsLmluaQ=="
-).decode("utf-8")
+RAW_GLOBAL_INI_URL = (
+    "https://raw.githubusercontent.com/"
+    "JarredSC/Star-Citizen-CZ-lokalizace/main/"
+    "Localization/english/global.ini"
+)
 GITHUB_API_LATEST = (
     "https://api.github.com/repos/JarredSC/Star-Citizen-CZ-lokalizace/releases/latest"
 )
