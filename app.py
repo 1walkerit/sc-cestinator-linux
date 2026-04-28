@@ -1,3 +1,4 @@
+import base64
 import os
 import re
 import sys
@@ -39,10 +40,9 @@ CONFIG_DIR = Path.home() / ".config" / "sc-cestinator"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
 GITHUB_REPO = "https://github.com/JarredSC/Star-Citizen-CZ-lokalizace"
-LATEST_ZIP_URL = (
-    "https://github.com/JarredSC/Star-Citizen-CZ-lokalizace/"
-    "releases/latest/download/Localization.zip"
-)
+RAW_GLOBAL_INI_URL = base64.b64decode(
+    "aHR0cHM6Ly9yYXcuZ2l0aHVidXNl([github.com](https://github.com/JarredSC/Star-Citizen-CZ-lokalizace/tree/main/Localization/english))0phcnJlZFNDL1N0YXItQ2l0aXplbi1DWi1sb2thbGl6YWNlL21haW4vTG9jYWxpemF0aW9uL2VuZ2xpc2gvZ2xvYmFsLmluaQ=="
+).decode("utf-8")
 GITHUB_API_LATEST = (
     "https://api.github.com/repos/JarredSC/Star-Citizen-CZ-lokalizace/releases/latest"
 )
@@ -126,12 +126,8 @@ def parse_version_line(text: str) -> str | None:
 
 
 def fetch_remote_global_ini_version() -> str | None:
-    raw_url = (
-        "https://raw.githubusercontent.com/"
-        "JarredSC/Star-Citizen-CZ-lokalizace/main/Localization/english/global.ini"
-    )
     try:
-        content = read_text_from_url(raw_url)
+        content = read_text_from_url(RAW_GLOBAL_INI_URL)
         return parse_version_line(content)
     except Exception:
         return None
@@ -419,7 +415,7 @@ class MainWindow(QMainWindow):
         cz_links_layout.setHorizontalSpacing(8)
         cz_links_layout.setVerticalSpacing(8)
         cz_links_layout.addWidget(self._make_link_button("GitHub projektu", GITHUB_REPO), 0, 0)
-        cz_links_layout.addWidget(self._make_link_button("Poslední release", LATEST_ZIP_URL), 0, 1)
+        cz_links_layout.addWidget(self._make_link_button("Raw global.ini", RAW_GLOBAL_INI_URL), 0, 1)
         cz_links_layout.addWidget(self._make_link_button("Nahlásit problém", ISSUE_URL), 0, 2)
 
         tools_links_label = QLabel("Nástroje")
@@ -720,29 +716,13 @@ class MainWindow(QMainWindow):
                 unpack_dir = tmp_dir / "unzipped"
                 unpack_dir.mkdir(parents=True, exist_ok=True)
 
-                self.log("Stahuji Localization.zip…")
-                download_file(LATEST_ZIP_URL, zip_path, timeout=120)
-                self.log(f"Staženo do: {zip_path}")
+                target_english = paths["english"]
+                target_english.mkdir(parents=True, exist_ok=True)
+                target_global_ini = paths["global_ini"]
 
-                with zipfile.ZipFile(zip_path, "r") as zf:
-                    zf.extractall(unpack_dir)
-                self.log("Archiv byl rozbalen.")
-
-                extracted_loc = unpack_dir / "Localization"
-                if not extracted_loc.exists():
-                    candidates = list(unpack_dir.rglob("Localization"))
-                    extracted_loc = candidates[0] if candidates else None
-
-                if not extracted_loc or not extracted_loc.exists():
-                    raise RuntimeError("V archivu nebyla nalezena složka Localization.")
-
-                target_loc = paths["localization"]
-                if target_loc.exists():
-                    shutil.rmtree(target_loc)
-                    self.log(f"Původní Localization odstraněna: {target_loc}")
-
-                shutil.copytree(extracted_loc, target_loc)
-                self.log(f"Nová lokalizace zkopírována do: {target_loc}")
+                self.log("Stahuji aktuální global.ini…")
+                download_file(RAW_GLOBAL_INI_URL, target_global_ini, timeout=120)
+                self.log(f"Soubor global.ini byl uložen do: {target_global_ini}")
 
             local_version = read_local_version(paths["global_ini"])
             self.set_status_label(self.data_status_value, "Existuje", "ok")

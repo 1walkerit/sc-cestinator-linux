@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=SC Češtinátor Linux
+Comment=Instalace a aktualizace české lokalizace pro Star Citizen
+Exec=sc-cestinator-linux
+Icon=sc-cestinator-linux
+Categories=Game;Utility;
+Terminal=false
+StartupNotify=true
